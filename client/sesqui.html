@@ -1,0 +1,50 @@
+<head>
+  <title>sesqui</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      {{#if currentUser}}
+        {{#if inRoom}}
+          {{> game}}
+        {{else}}
+          {{> roomList}}
+        {{/if}}
+      {{else}}
+        {{> loginButtons}}
+      {{/if}}
+    </div>
+  </div>
+</body>
+
+<template name="roomList">
+  <table class="table table-hover">
+    {{#each rooms}}
+      {{> roomItem}}
+    {{/each}}
+  </table>
+  <button type="button" class="create-room btn btn-primary">Create Room</button>
+</template>
+
+<template name="roomItem">
+  <tr>
+    <td><button type="button" class="join-room btn btn-primary">Join</button></td>
+    <td>{{name}}</td>
+    <td>{{white}}</td>
+  </tr>
+</template>
+
+<template name="game">
+  <div class="col-md-offset-2 col-md-8">
+    <h3><strong>Sesqui:</strong> First player to connect both of his sides of the board wins</h3>
+    <hr />
+
+    <figure>
+      <canvas id="interface"></canvas>
+    </figure>
+
+    <h4>{{currentPlayer}} {{#if currentPlace }}| <i class="fa fa-thumb-tack"></i> {{/if}} {{#if currentMove }}| <i class="fa fa-arrows-alt"></i> {{/if}}</h4>
+    <button type="button" class="exit-room btn btn-primary">Exit Room</button>
+  </div>
+</template>

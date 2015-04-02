@@ -1,0 +1,8 @@
+body {
+  background-image: url("bg.png");
+  background-repeat: repeat;
+}
+
+figure {
+  margin: 0 auto;
+}
