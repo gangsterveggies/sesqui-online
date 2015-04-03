@@ -1,8 +1,8 @@
 (function(){for(var d=0,a=["ms","moz","webkit","o"],b=0;b<a.length&&!window.requestAnimationFrame;++b)window.requestAnimationFrame=window[a[b]+"RequestAnimationFrame"],window.cancelAnimationFrame=window[a[b]+"CancelAnimationFrame"]||window[a[b]+"CancelRequestAnimationFrame"];window.requestAnimationFrame||(window.requestAnimationFrame=function(b){var a=(new Date).getTime(),c=Math.max(0,16-(a-d)),e=window.setTimeout(function(){b(a+c);},c);d=a+c;return e;});window.cancelAnimationFrame||(window.cancelAnimationFrame=function(a){clearTimeout(a);});})();
 
 var animCurrent, objectiveSquare, startAnim, anim, game;
-var dx = [-1, -1, -1, 0, 0, 1, 1, 1];
-var dy = [-1, 0, 1, 1, -1, -1, 0, 1];
+var dx = [1, -1, 0, 0, 1, 1, -1, -1];
+var dy = [0, 0, 1, -1, -1, 1, 1, -1];
 
 function Square(a, b) {
   'use strict';
@@ -82,7 +82,7 @@ Game.prototype.setSize = function () {
   // Set the extremes, and calculate the size.
   var min = 200,
       max = $(window).width() - 100,
-      size = $(window).height() - 170;
+      size = $(window).height() - 250;
 
   // Responsive details
   if ($(window).width() < 980) { size -= 10; }
@@ -115,10 +115,6 @@ Game.prototype.setSize = function () {
 
 Game.prototype.render = function () {
   'use strict';
-
-  if (this.gameOver) {
-    return;
-  }
 
   var i, j, x, y,
       square = this.units.square * this.pattern,
@@ -177,7 +173,14 @@ Game.prototype.render = function () {
     this.ctx.fill();
   }
 
-  return;
+  if (this.gameOver) {
+    this.ctx.globalAlpha = 0.2;
+    this.ctx.fillStyle = "#000";
+    this.ctx.fillRect(this.lineOffset - 1, this.lineOffset - 1, this.canvas.width - 2 * this.lineOffset + 1, this.canvas.height - 2 * this.lineOffset + 1);
+    this.ctx.globalAlpha = 1;
+    this.ctx.font="30px Arial";
+    this.ctx.fillText("Game Over!", this.canvas.width / 2 - 80, this.canvas.height / 2);
+  }
 };
 
 Game.prototype.click = function (position) {
@@ -199,17 +202,16 @@ Game.prototype.click = function (position) {
     action = this.highlight(square.filled) ? 0 : -1;
   } else {
     if (this.highlightPiece) {
-      action = this.movePiece(square, false) ? 1 : -1;
+      action = this.movePiece(square, false, true) ? 1 : -1;
     } else {
-      action = this.placePiece(square, false) ? 2 : -1;
+      action = this.placePiece(square, false, true) ? 2 : -1;
     }
   }
 
   if (action < 0) {
     this.clearHighlight();
+    this.render();
   }
-
-  this.render();
 
   if (action > 0) {
     var moveAction;
@@ -229,13 +231,6 @@ Game.prototype.click = function (position) {
 Game.prototype.setOver = function () {
   if (this.checkOver()) {
     this.gameOver = true;
-
-    this.ctx.globalAlpha = 0.2;
-    this.ctx.fillStyle = "#000";
-    this.ctx.fillRect(this.lineOffset - 1, this.lineOffset - 1, this.canvas.width - 2 * this.lineOffset + 1, this.canvas.height - 2 * this.lineOffset + 1);
-    this.ctx.globalAlpha = 1;
-    this.ctx.font="30px Arial";
-    this.ctx.fillText("Game Over!", this.canvas.width / 2 - 80, this.canvas.height / 2);
   }
 };
 
@@ -305,7 +300,7 @@ Game.prototype.checkOver = function () {
   return false;
 };
 
-Game.prototype.placePiece = function (square, checkable) {
+Game.prototype.placePiece = function (square, checkable, renderable) {
   if (!checkable && (Session.get("currentPlace") === 1 || !this.validPosition(square))) {
     return false;
   }
@@ -315,12 +310,16 @@ Game.prototype.placePiece = function (square, checkable) {
   this.clearHighlight();
 
   this.setPlace();
-
   this.setOver();
+
+  if (renderable) {
+    this.render();
+  }
+
   return true;
 };
 
-Game.prototype.movePiece = function (square, checkable) {
+Game.prototype.movePiece = function (square, checkable, renderable) {
   if (!checkable && (!_.findWhere(this.highlightSquares, { a: square.a, b: square.b }) || Session.get("currentMove") === 1)) {
     return false;
   }
@@ -329,10 +328,19 @@ Game.prototype.movePiece = function (square, checkable) {
   objectiveSquare = square;
   animCurrent = this.highlightPiece;
 
-  startAnim = null;
-  this.anim = requestAnimationFrame(this.animPiece);
-
   this.clearHighlight();
+
+  if (renderable) {
+    startAnim = null;
+    this.anim = requestAnimationFrame(this.animPiece);
+  } else {
+    animCurrent.a = objectiveSquare.a;
+    animCurrent.b = objectiveSquare.b;
+    game.board[animCurrent.a][animCurrent.b].filled = animCurrent;
+
+    game.setMove();
+    game.setOver();
+  }
 
   return true;
 };
@@ -368,6 +376,56 @@ Game.prototype.availablePosition = function (position) {
   return position.a >= 0 && position.a <= this.size && position.b >= 0 && position.b <= this.size;
 };
 
+Game.prototype.checkPosition = function (position) {
+  var mcol = Session.get("current"),
+      ocol = 1 - mcol,
+      i;
+
+  // Check:
+  // xo
+  // .x
+  var dxD = [0, 1];
+  var dyD = [1, 0];
+  var dxE = [1];
+  var dyE = [1];
+
+  var fl = true;
+  for (i = 0; i < 2; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxD[i], b: position.b + dyD[i] }) && this.board[position.a + dxD[i]][position.b + dyD[i]].filled && this.board[position.a + dxD[i]][position.b + dyD[i]].filled.color === ocol);
+  }
+
+  for (i = 0; i < 1; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxE[i], b: position.b + dyE[i] }) && this.board[position.a + dxE[i]][position.b + dyE[i]].filled && this.board[position.a + dxE[i]][position.b + dyE[i]].filled.color === mcol);
+  }
+
+  if (fl) {
+    return false;
+  }
+
+  // Check:
+  // x.
+  // ox
+  dxD = [0, -1];
+  dyD = [-1, 0];
+  dxE = [-1];
+  dyE = [-1];
+
+  fl = true;
+  for (i = 0; i < 2; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxD[i], b: position.b + dyD[i] }) && this.board[position.a + dxD[i]][position.b + dyD[i]].filled && this.board[position.a + dxD[i]][position.b + dyD[i]].filled.color === ocol);
+  }
+
+  for (i = 0; i < 1; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxE[i], b: position.b + dyE[i] }) && this.board[position.a + dxE[i]][position.b + dyE[i]].filled && this.board[position.a + dxE[i]][position.b + dyE[i]].filled.color === mcol);
+  }
+
+  if (fl) {
+    return false;
+  }
+
+  return true;
+};
+
 Game.prototype.validPosition = function (position) {
   if (!this.availablePosition(position)) {
     return false;
@@ -378,7 +436,7 @@ Game.prototype.validPosition = function (position) {
   }
 
   var found = false;
-  for (var i = 0; i < 8; i++) {
+  for (var i = 0; i < 4; i++) {
     var pos = { a: position.a + dx[i], b: position.b + dy[i] };
 
     if (this.availablePosition(pos) && this.board[pos.a][pos.b].filled) {
@@ -386,7 +444,7 @@ Game.prototype.validPosition = function (position) {
     }
   }
 
-  return found;
+  return found && this.checkPosition(position);
 };
 
 Game.prototype.highlight = function (piece) {
@@ -395,16 +453,19 @@ Game.prototype.highlight = function (piece) {
   } else {
     this.highlightSquares = [];
     this.highlightPiece = piece;
+    this.board[piece.a][piece.b].filled = null;
 
     for (var i = 0; i < 8; i++) {
       var pos = { a: piece.a + dx[i], b: piece.b + dy[i] };
       
-      while (this.availablePosition(pos) && !this.board[pos.a][pos.b].filled) {
+      while (this.availablePosition(pos) && !this.board[pos.a][pos.b].filled && this.checkPosition(pos)) {
         this.highlightSquares.push(_.clone(pos));
         pos.a += dx[i];
         pos.b += dy[i];
       }
     }
+
+    this.board[piece.a][piece.b].filled = piece;
 
     this.render();
     return true;
