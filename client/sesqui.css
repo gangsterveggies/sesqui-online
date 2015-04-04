@@ -32,8 +32,89 @@ header .panel-info {
   font-size: 1.4em;
 }
 
+header .panel-info a {
+  margin-right: 20px;
+}
+
 header .tagline {
   font-size: 2em;
   font-family: Overlock;
   font-weight: 700;
+}
+
+
+#loginform input{
+  background:rgba(255,255,255,1);
+  color:rgba(0,0,0,0.6);
+}
+
+#loginform form{
+  width:360px;
+  margin:0 auto;
+  margin-top:60px;
+  margin-bottom: 40px;
+  padding:40px;
+  background:rgba(255,255,255,0.2);
+  border-radius: 4px;
+  box-shadow: 0,0,5,5, rgba(0,0,0);
+}
+
+#loginform form h3{
+  color:rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  font-size:24px;
+  margin-bottom: 1.2em;
+  letter-spacing: 2px;
+}
+
+#loginform h4 {
+  background: rgba(0, 0, 0, .75);
+  text-transform: uppercase;
+  border-radius: 4px;
+  font-size:14px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  width:280px;
+  margin:0 auto;
+  padding:10px;
+}
+
+#loginform h4 a{
+  color:white;
+  text-decoration: none;
+}
+
+#loginform button{
+  width:100%;
+  background: rgba(159, 201, 196,1.0);
+  border: 0px;
+  color:rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+  font-weight: 300;
+}
+
+#loginform button:hover{
+  background: rgba(29, 164, 86,1.0);
+}
+
+#loginform input::-webkit-input-placeholder {
+  color: rgba(0,0,0,0.25);
+}
+
+#loginform input:-moz-placeholder {
+  color: rgba(0,0,0,0.25);
+}
+
+#loginform input::-moz-placeholder { /* Firefox 19+ */
+  color: rgba(0,0,0,0.25);
+}
+
+#loginform input:-ms-input-placeholder {
+  color: rgba(0,0,0,0.25);
+}
+
+.create-room {
+  margin-bottom: 20px;
 }

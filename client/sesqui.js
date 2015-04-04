@@ -1,8 +1,103 @@
 var game, player;
+Session.set("room", {name: "", white: "", black: ""});
 
 Template.body.helpers({
   inRoom: function () {
     return Meteor.user().roomId;
+  },
+
+  currentUsername: function () {
+    return Meteor.user().username;
+  }
+});
+
+Template.body.rendered = function() {
+  changeSignIn();
+};
+
+function signIn() {
+  var password = $('#password').val();
+  var uname = $('#username').val();
+
+  Meteor.loginWithPassword(uname, password, function(error) {
+    if (error) {
+      throwError(error.reason);
+    }
+  });
+}
+
+function signUp() {
+  var password = $('#password').val();
+  var password_confirmation = $('#password-confirmation').val();
+  var uname = $('#username').val();
+
+  if (password !== password_confirmation) {
+    throwError('Passwords don\'t match!');
+    return;
+  } else if (!password) {
+    throwError('You need to set the password up.');
+    return;
+  }
+
+  Accounts.createUser({
+    username: uname,
+    password: password
+  }, function(error) {
+    if (error) {
+      throwError(error.reason);
+    } else {
+      Meteor.loginWithPassword(uname, password);
+      changeSignIn();
+    }
+  });
+}
+
+function throwError (message) {
+  alert(message);
+}
+
+function changeSignIn() {
+  $('#pass-confirm-div').fadeOut('medium');
+  $('#sign-text').text('Sign In');
+  $('.submit-button').text('Sign In');
+  $('#sign-changer').text('Register');
+  $('#sign-changer').attr('id','register-changer');
+  $('#sign-type').val('sign-in');
+}
+
+function changeSignUp() {
+  $('#pass-confirm-div').fadeIn('medium');
+  $('#sign-text').text('Sign Up');
+  $('.submit-button').text('Register');
+  $('#register-changer').text('Sign In');
+  $('#register-changer').attr('id','sign-changer');
+  $('#sign-type').val('sign-up');
+}
+
+Template.body.events({
+  'click .logout-button': function () {
+    Meteor.logout();
+  },
+
+  'submit #loginformtag': function(event) {
+    event.preventDefault();
+
+    var sign_type = $("#sign-type").val();
+    if (sign_type == "sign-in") {
+      signIn();
+    } else {
+      signUp();
+    }
+  },
+
+  'click #register-changer': function(event) {
+    event.preventDefault();
+    changeSignUp();
+  },
+
+  'click #sign-changer': function(event) {
+    event.preventDefault();
+    changeSignIn();
   }
 });
 
@@ -27,6 +122,23 @@ Template.roomList.events({
 
     var newRoom = {
       name: roomName,
+      white: Meteor.user().username
+    };
+
+    Rooms.insert(newRoom);
+  },
+
+  'click .play-bot': function (event) {
+    event.preventDefault();
+
+    var roomName = Meteor.user().username + "'s room";
+    if ($(".room-name").val() !== "") {
+      roomName = $(".room-name").val();
+    }
+
+    var newRoom = {
+      name: roomName,
+      bot: true,
       white: Meteor.user().username
     };
 
@@ -62,6 +174,9 @@ Template.game.rendered = function () {
         roomHandle.stop();
 
         Session.set("room", Rooms.findOne(Meteor.user().roomId));
+        if (!document.hasFocus()) {
+          document.title = "Game started!";
+        }
         startGame();
       }
     });
@@ -93,9 +208,9 @@ function startGame () {
   console.log("T2");
 
   _.each(res, function (act) {
-    console.log(act);
     if (act.type === "move") {
-      game.highlightPiece = game.pieces[act.highlight];
+      game.highlightPiece = _.find(game.pieces, function(piece) { return piece.a === act.moveTo.a && piece.b === act.moveTo.b; });
+      console.log(game.highlightPiece);
       game.movePiece(act.piece, true, false);
     } else {
       game.placePiece(act.piece, true, false);
@@ -111,7 +226,7 @@ function startGame () {
       }
 
       if (move.type === "move") {
-        game.highlightPiece = game.pieces[move.highlight];
+        game.highlightPiece = _.find(game.pieces, function(piece) { return piece.a === move.moveTo.a && piece.b === move.moveTo.b; });
         game.movePiece(move.piece, true, true);
       } else {
         game.placePiece(move.piece, true, true);
@@ -120,10 +235,18 @@ function startGame () {
       game.render();
 
       if (!document.hasFocus()) {
-        document.title = "Your move!";
+        if (Session.get("current") === player) {
+          document.title = "Your move!";
+        } else {
+          document.title = "Your opponent moved!";
+        }
       }
     }
   });
+
+  if (Session.get("room").bot && Session.get("current") !== player) {
+    Meteor.call('botMove');
+  }
 }
 
 Template.game.events({
@@ -135,6 +258,10 @@ Template.game.events({
       if (action) {
         action.roomId = Session.get("roomId");
         Meteor.call('makeMove', action);
+      }
+
+      if (Session.get("room").bot && Session.get("current") !== player) {
+        Meteor.call('botMove');
       }
     }
   },
@@ -154,7 +281,7 @@ Template.game.events({
 
     _.each(res, function (act) {
       if (act.type === "move") {
-        dump += "m|" + game.pieces[act.highlight].a.toString() + "|" + game.pieces[act.highlight].b.toString() + "|" + act.piece.a.toString() + "|" + act.piece.b.toString() + "$";
+        dump += "m|" + act.moveTo.a.toString() + "|" + act.moveTo.b.toString() + "|" + act.piece.a.toString() + "|" + act.piece.b.toString() + "$";
       } else {
         dump += "p|" + act.piece.a.toString() + "|" + act.piece.b.toString() + "$";
       }

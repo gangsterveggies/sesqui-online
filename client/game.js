@@ -191,8 +191,12 @@ Game.prototype.click = function (position) {
   var offset = $(this.canvas).offset(),
       pointer = {x: (position.x - offset.left - this.lineOffset) / this.pattern, y: (position.y - offset.top - this.lineOffset) / this.pattern};
 
-  var square = this.getSquare(pointer), prevHigh = _.indexOf(this.pieces, this.highlightPiece);
+  var square = this.getSquare(pointer), prevHigh;
   var action = -1, currentMove = this.move;
+
+  if (this.highlightPiece) {
+    prevHigh = { a: this.highlightPiece.a, b: this.highlightPiece.b };
+  }
 
   if (!square) {
     return null;
@@ -217,7 +221,7 @@ Game.prototype.click = function (position) {
     var moveAction;
 
     if (action === 1) {
-      moveAction = { type: "move", piece: square, highlight: prevHigh, move: currentMove };
+      moveAction = { type: "move", piece: square, moveTo: prevHigh, move: currentMove };
     } else {
       moveAction = { type: "place", piece: square, move: currentMove };
     }

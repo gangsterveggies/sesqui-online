@@ -15,7 +15,7 @@ Meteor.publish('own-room', function (userId) {
     user = { username: "" };
   }
 
-  return Rooms.find({ $or: [ { white: user.username }, { black: user.username } ] }, { fields: { name: true, _id: true, white: true, black: true } });
+  return Rooms.find({ $or: [ { white: user.username }, { black: user.username } ] }, { fields: { name: true, _id: true, white: true, black: true, bot: true } });
 });
 
 Meteor.publish('user', function () {
@@ -32,7 +32,7 @@ Rooms.allow({
   insert: function (userId, doc) {
     var user = Meteor.users.findOne(userId);
 
-    return (user && doc.white === user.username && doc.black === "");
+    return (user && doc.white === user.username && ((doc.black === "" && !doc.bot) || (doc.black === "BOT1" && doc.bot)));
   },
 
   remove: function (userId, doc) {
