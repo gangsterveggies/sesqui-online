@@ -37,6 +37,7 @@ Game = function () {
 
   game = this;
 
+  this.player = 0;
   this.size = settings.size;
   this.lineOffset = settings.offset;
   this.gameOver = false;
@@ -512,6 +513,12 @@ Game.prototype.setTotal = function () {
     if (this.move !== 1) {
       Session.set("current", 1 - Session.get("current"));
     }
+
+    if (this.callback) {
+      this.callback();
+    }
+
+    this.callback = null;
 
     this.move += 1;
   }

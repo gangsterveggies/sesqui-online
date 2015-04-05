@@ -90,7 +90,7 @@ function parseAction(move) {
   
   if (lmoves[0] === 'm') {
     action.type = "move";
-    action.highlight = { a: parseInt(lmoves[1]), b: parseInt(lmoves[2]) };
+    action.moveTo = { a: parseInt(lmoves[1]), b: parseInt(lmoves[2]) };
     action.piece = { a: parseInt(lmoves[3]), b: parseInt(lmoves[4]) };
   } else {
     action.type = "place";

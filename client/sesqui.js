@@ -195,6 +195,7 @@ function startGame () {
   console.log("T0");
 
   game.setSize();
+  game.player = player;
 
   $(window).resize(function () {
     game.setSize();
@@ -210,7 +211,6 @@ function startGame () {
   _.each(res, function (act) {
     if (act.type === "move") {
       game.highlightPiece = _.find(game.pieces, function(piece) { return piece.a === act.moveTo.a && piece.b === act.moveTo.b; });
-      console.log(game.highlightPiece);
       game.movePiece(act.piece, true, false);
     } else {
       game.placePiece(act.piece, true, false);
@@ -226,6 +226,7 @@ function startGame () {
       }
 
       if (move.type === "move") {
+        console.log(move.moveTo);
         game.highlightPiece = _.find(game.pieces, function(piece) { return piece.a === move.moveTo.a && piece.b === move.moveTo.b; });
         game.movePiece(move.piece, true, true);
       } else {
@@ -254,13 +255,23 @@ Template.game.events({
     event.preventDefault();
 
     if (Session.get("current") === player) {
+      var callback = function () {
+        if (Session.get("room").bot && Session.get("current") !== player) {
+          Meteor.call('botMove');
+        }
+      };
+
+      game.callback = null;
       var action = game.click({ x: event.pageX, y: event.pageY });
+
       if (action) {
         action.roomId = Session.get("roomId");
         Meteor.call('makeMove', action);
+        game.callback = callback;
       }
 
       if (Session.get("room").bot && Session.get("current") !== player) {
+        game.callback = null;
         Meteor.call('botMove');
       }
     }
