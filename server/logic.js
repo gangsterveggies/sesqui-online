@@ -45,7 +45,12 @@ Meteor.methods({
     var dump = "",
         next_move = -1;
 
-    _.each(res, function (act) {
+    res.sort(function(a, b) {
+      return a.move - b.move;
+    });
+
+    for (var i = 0; i < res.length; i++) {
+      var act = res[i];
       if (act.type === "move") {
         dump += "m|" + act.moveTo.a.toString() + "|" + act.moveTo.b.toString() + "|" + act.piece.a.toString() + "|" + act.piece.b.toString() + "$";
       } else {
@@ -53,9 +58,10 @@ Meteor.methods({
       }
 
       next_move = Math.max(next_move, act.move);
-    });
+    }
 
     next_move += 1;
+    console.log(dump);
 
     var result = HTTP.get("http://" + botIP + "?board=" + dump);
 
@@ -67,6 +73,7 @@ Meteor.methods({
         action.roomId = room._id;
         action.move = next_move + i;
         Actions.insert(action);
+//        console.log(action);
       }
     } else {
       console.log(result);

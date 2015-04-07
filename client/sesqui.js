@@ -203,7 +203,7 @@ function startGame () {
 
   console.log("T1");
 
-  var query = Actions.find({ roomId: Session.get("roomId") });
+  var query = Actions.find({ roomId: Session.get("roomId") }, { $sort: { move: 1 } });
   var res = query.fetch();
 
   console.log("T2");
@@ -287,7 +287,7 @@ Template.game.events({
   'click .dump-moves': function (event) {
     event.preventDefault();
 
-    var res = Actions.find({ roomId: Session.get("roomId") }).fetch();
+    var res = Actions.find({ roomId: Session.get("roomId") }, { $sort: { move: 1 } }).fetch();
     var dump = "";
 
     _.each(res, function (act) {

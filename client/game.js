@@ -519,7 +519,7 @@ Game.prototype.setTotal = function () {
     }
 
     this.callback = null;
-
-    this.move += 1;
   }
+
+  this.move += 1;
 };
