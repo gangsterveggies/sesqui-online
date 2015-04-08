@@ -199,6 +199,8 @@ Game.prototype.click = function (position) {
     prevHigh = { a: this.highlightPiece.a, b: this.highlightPiece.b };
   }
 
+  console.log(square);
+
   if (!square) {
     return null;
   }
@@ -428,6 +430,48 @@ Game.prototype.checkPosition = function (position) {
     return false;
   }
 
+  // Check:
+  // .x
+  // xo
+  dxD = [0, 1];
+  dyD = [-1, 0];
+  dxE = [1];
+  dyE = [-1];
+
+  fl = true;
+  for (i = 0; i < 2; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxD[i], b: position.b + dyD[i] }) && this.board[position.a + dxD[i]][position.b + dyD[i]].filled && this.board[position.a + dxD[i]][position.b + dyD[i]].filled.color === ocol);
+  }
+
+  for (i = 0; i < 1; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxE[i], b: position.b + dyE[i] }) && this.board[position.a + dxE[i]][position.b + dyE[i]].filled && this.board[position.a + dxE[i]][position.b + dyE[i]].filled.color === mcol);
+  }
+
+  if (fl) {
+    return false;
+  }
+
+  // Check:
+  // ox
+  // x.
+  dxD = [0, -1];
+  dyD = [1, 0];
+  dxE = [-1];
+  dyE = [1];
+
+  fl = true;
+  for (i = 0; i < 2; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxD[i], b: position.b + dyD[i] }) && this.board[position.a + dxD[i]][position.b + dyD[i]].filled && this.board[position.a + dxD[i]][position.b + dyD[i]].filled.color === ocol);
+  }
+
+  for (i = 0; i < 1; i++) {
+    fl = fl && (this.availablePosition({ a: position.a + dxE[i], b: position.b + dyE[i] }) && this.board[position.a + dxE[i]][position.b + dyE[i]].filled && this.board[position.a + dxE[i]][position.b + dyE[i]].filled.color === mcol);
+  }
+
+  if (fl) {
+    return false;
+  }
+
   return true;
 };
 
@@ -463,8 +507,11 @@ Game.prototype.highlight = function (piece) {
     for (var i = 0; i < 8; i++) {
       var pos = { a: piece.a + dx[i], b: piece.b + dy[i] };
       
-      while (this.availablePosition(pos) && !this.board[pos.a][pos.b].filled && this.checkPosition(pos)) {
-        this.highlightSquares.push(_.clone(pos));
+      while (this.availablePosition(pos) && !this.board[pos.a][pos.b].filled) {
+        if (this.checkPosition(pos)){
+          this.highlightSquares.push(_.clone(pos));
+        }
+
         pos.a += dx[i];
         pos.b += dy[i];
       }
